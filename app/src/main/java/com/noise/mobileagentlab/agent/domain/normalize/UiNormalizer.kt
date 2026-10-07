@@ -2,6 +2,7 @@ package com.noise.mobileagentlab.agent.domain.normalize
 
 import com.noise.mobileagentlab.agent.domain.model.ElementKind
 import com.noise.mobileagentlab.agent.domain.model.NodeBounds
+import com.noise.mobileagentlab.agent.domain.model.NodeCapabilities
 import com.noise.mobileagentlab.agent.domain.model.UiSnapshot
 
 /**
@@ -17,6 +18,8 @@ import com.noise.mobileagentlab.agent.domain.model.UiSnapshot
 data class UiElement(
     val id: String,
     val label: String,
+    /** Current raw value of the node (e.g. text typed into an input). */
+    val value: String,
     val kind: ElementKind,
     val bounds: NodeBounds,
     val depth: Int,
@@ -25,6 +28,7 @@ data class UiElement(
     val checked: Boolean?,
     val state: String,
     val sensitive: Boolean,
+    val capabilities: NodeCapabilities,
 )
 
 data class CompactUiState(
@@ -69,6 +73,7 @@ data class CompactUiState(
                 false -> " unchecked"
             }
             append(" \"").append(e.label).append('"')
+            if (e.value.isNotBlank() && e.value != e.label) append(" value=\"").append(e.value).append('"')
             if (stateSuffix.isNotEmpty()) append(stateSuffix)
             if (checkedSuffix.isNotEmpty()) append(checkedSuffix)
             append('\n')
@@ -119,6 +124,7 @@ object UiNormalizer {
             val element = UiElement(
                 id = node.id,
                 label = label,
+                value = normalizeLabel(node.text),
                 kind = node.kind,
                 bounds = node.bounds,
                 depth = node.depth,
@@ -127,6 +133,7 @@ object UiNormalizer {
                 checked = if (node.capabilities.checkable) node.capabilities.checked else null,
                 state = normalizeLabel(node.stateDescription),
                 sensitive = node.sensitive,
+                capabilities = node.capabilities,
             )
             candidates.add(element)
 

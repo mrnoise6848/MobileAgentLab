@@ -42,6 +42,25 @@ data class NodeCapabilities(
 }
 
 /**
+ * Stable identity label for a node.
+ *
+ * Editable fields keep their declared description as identity (otherwise typing
+ * into a field would change its label and break re-targeting/verification);
+ * everything else prefers its visible text.
+ */
+fun stableLabel(
+    text: String,
+    contentDescription: String,
+    stateDescription: String,
+    editable: Boolean,
+): String = when {
+    editable && contentDescription.isNotBlank() -> contentDescription
+    text.isNotBlank() -> text
+    contentDescription.isNotBlank() -> contentDescription
+    else -> stateDescription
+}
+
+/**
  * One node of the accessibility tree, flattened.
  *
  * @param id stable path id (`n0`, `n0.1`, `n0.1.3`) — stable while the tree
@@ -64,14 +83,14 @@ data class UiNode(
     val capabilities: NodeCapabilities,
     val sensitive: Boolean,
 ) {
-    /** Best human label: explicit text first, then descriptions. */
+    /** Best human label: stable identity (see [stableLabel]). */
     val label: String
-        get() = when {
-            text.isNotBlank() -> text
-            contentDescription.isNotBlank() -> contentDescription
-            stateDescription.isNotBlank() -> stateDescription
-            else -> ""
-        }
+        get() = stableLabel(
+            text = text,
+            contentDescription = contentDescription,
+            stateDescription = stateDescription,
+            editable = capabilities.editable,
+        )
 
     val kind: ElementKind
         get() = when {

@@ -90,7 +90,7 @@ sealed interface Expectation {
             }
             val element = after.findElements(label).firstOrNull()
                 ?: return ExpectationOutcome(false, "no element matching \"$label\"")
-            val value = element.label
+            val value = element.value.ifBlank { element.label }
             return if (value.contains(text, ignoreCase = true)) {
                 ExpectationOutcome(true, "\"${element.label}\" contains \"$text\"")
             } else {

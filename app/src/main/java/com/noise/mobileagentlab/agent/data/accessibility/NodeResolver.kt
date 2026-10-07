@@ -1,7 +1,9 @@
 package com.noise.mobileagentlab.agent.data.accessibility
 
 import android.graphics.Rect
+import android.os.Build
 import android.view.accessibility.AccessibilityNodeInfo
+import com.noise.mobileagentlab.agent.domain.model.stableLabel
 import com.noise.mobileagentlab.agent.domain.normalize.UiNormalizer
 
 /**
@@ -48,10 +50,7 @@ object NodeResolver {
         fun visit(node: AccessibilityNodeInfo) {
             if (visited >= UiTreeExtractor.MAX_NODES || exactMatch != null) return
             visited++
-            val nodeLabel = UiNormalizer.normalizeLabel(
-                node.text?.toString()?.takeIf { it.isNotBlank() }
-                    ?: node.contentDescription?.toString(),
-            )
+            val nodeLabel = rawLabel(node)
             if (nodeLabel.isNotEmpty() && accepts(node)) {
                 val normalized = nodeLabel.equals(wanted, ignoreCase = true)
                 if (normalized) {
@@ -93,8 +92,22 @@ object NodeResolver {
         return found
     }
 
-    fun labelOf(node: AccessibilityNodeInfo): String = UiNormalizer.normalizeLabel(
-        node.text?.toString()?.takeIf { it.isNotBlank() } ?: node.contentDescription?.toString(),
+    fun labelOf(node: AccessibilityNodeInfo): String = rawLabel(node)
+
+    /** Same identity rule the normalizer uses, applied to a live node. */
+    private fun rawLabel(node: AccessibilityNodeInfo): String = UiNormalizer.normalizeLabel(
+        stableLabel(
+            text = node.text?.toString().orEmpty(),
+            contentDescription = node.contentDescription?.toString().orEmpty(),
+            stateDescription = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                node.stateDescription?.toString().orEmpty()
+            } else {
+                ""
+            },
+            editable = node.actionList?.any {
+                it.id == AccessibilityNodeInfo.ACTION_SET_TEXT
+            } == true,
+        ),
     )
 
     fun boundsOf(node: AccessibilityNodeInfo): Rect {
