@@ -23,6 +23,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Phase 2 — observer foundation.
+            exported=false + BIND_ACCESSIBILITY_SERVICE: only Android can bind,
+            and only after the user explicitly enables the service in Settings.
+        -->
+        <service
+            android:name=".agent.data.accessibility.AgentAccessibilityService"
+            android:exported="false"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
     </application>
+
+    <!-- Allowlisted demo target only (launch-intent visibility). -->
+    <queries>
+        <package android:name="com.noise.mobileagentlab.demo" />
+    </queries>
 
 </manifest>

@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">MobileAgentLab</string>
+    <string name="app_name">MobileAgent Lab</string>
+    <string name="accessibility_service_label">MobileAgent Lab Observer</string>
+    <string name="accessibility_service_description">Lets MobileAgent Lab read the current screen structure and perform a small, allowlisted set of actions inside the Brew Lab demo app. It never collects passwords, payment data or other secrets, and it cannot control apps outside the configured demo target. Runs only start when you press Start in the app.</string>
 </resources>
