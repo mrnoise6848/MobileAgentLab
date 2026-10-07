@@ -2,9 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+        Phase 24 — the ONLY permission in the app.
+        Required by the opt-in remote LLM planner (docs/safety.md §4). Nothing
+        is ever sent unless the user explicitly configures an endpoint; by
+        default the app performs no network I/O at all.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".LabApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

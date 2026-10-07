@@ -51,8 +51,15 @@ no permission handling, no authentication flows.
 * Traces store `TYPE` actions with a 24-character preview only, and every stored
   string goes through the same sensitive-term heuristics.
 * Accessibility trees are processed **on device** and kept in memory only.
-  Nothing is uploaded by default.
+  Nothing is uploaded by default — the app's only permission is `INTERNET`
+  (needed by the opt-in planner below), and no network call exists outside
+  `RemoteLlmPlanner`, which stays inert until an endpoint is configured.
+* A field classified as sensitive has its content blanked at extraction time:
+  its text/value never enters the snapshot, the normalized state, the planner
+  context or any trace (only the label it declares about itself survives).
 * No screenshots, no media capture, no `AccessibilityEvent` payloads are logged.
+* `android:allowBackup="false"`: no run data, traces or settings leave the
+  device via device backup.
 
 ### If the optional remote LLM planner is enabled
 
@@ -60,7 +67,8 @@ Exactly these fields are sent to the endpoint **you** configure:
 
 1. task title/description and the current goal,
 2. the compact normalized screen state (`UiNormalizer` output: element ids,
-   labels, bounds, roles, checked/disabled/sensitive flags),
+   labels, bounds, roles, checked/disabled/sensitive flags, non-sensitive
+   values — a sensitive field's content is blanked before this point),
 3. the last ≤8 step summaries (action label + verified/failed),
 4. the fixed schema instructions.
 

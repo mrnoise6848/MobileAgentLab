@@ -102,6 +102,12 @@ object UiTreeExtractor {
                 isPassword = isPasswordInput(inputType),
             )
 
+            // Phase 24 — once a node is classified sensitive, its content never
+            // enters the snapshot at all: labels/values/planner context/traces
+            // only see what the field declares about itself (or nothing).
+            val storedText = if (sensitive) "" else text
+            val storedState = if (sensitive) "" else stateDescription
+
             val childIds = ArrayList<String>(node.childCount)
             val index = rawNodes.size
             rawNodes.add(
@@ -112,9 +118,9 @@ object UiTreeExtractor {
                     depth = depth,
                     className = className,
                     packageName = nodePkg,
-                    text = text,
+                    text = storedText,
                     contentDescription = contentDescription,
-                    stateDescription = stateDescription,
+                    stateDescription = storedState,
                     viewId = viewId,
                     bounds = bounds,
                     capabilities = capabilities,

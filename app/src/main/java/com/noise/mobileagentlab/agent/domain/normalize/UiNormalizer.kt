@@ -124,14 +124,16 @@ object UiNormalizer {
             val element = UiElement(
                 id = node.id,
                 label = label,
-                value = normalizeLabel(node.text),
+                // Phase 24 — a sensitive field's VALUE never leaves the extractor:
+                // planner context, LLM prompts and traces only ever see the label.
+                value = if (node.sensitive) "" else normalizeLabel(node.text),
                 kind = node.kind,
                 bounds = node.bounds,
                 depth = node.depth,
                 enabled = node.capabilities.enabled,
                 actionable = actionable,
                 checked = if (node.capabilities.checkable) node.capabilities.checked else null,
-                state = normalizeLabel(node.stateDescription),
+                state = if (node.sensitive) "" else normalizeLabel(node.stateDescription),
                 sensitive = node.sensitive,
                 capabilities = node.capabilities,
             )
