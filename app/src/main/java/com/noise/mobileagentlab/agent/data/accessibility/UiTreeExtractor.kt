@@ -151,11 +151,14 @@ object UiTreeExtractor {
 
     private val WHITESPACE = Regex("\\s+")
 
+    // Reused across the traversal: bounds are copied into NodeBounds immediately,
+    // so one Rect per extraction is enough (Phase 23 — no per-node allocation).
+    private val boundsScratch = Rect()
+
     private fun boundsOf(node: AccessibilityNodeInfo): NodeBounds {
-        val rect = Rect()
         return try {
-            node.getBoundsInScreen(rect)
-            NodeBounds(rect.left, rect.top, rect.right, rect.bottom)
+            node.getBoundsInScreen(boundsScratch)
+            NodeBounds(boundsScratch.left, boundsScratch.top, boundsScratch.right, boundsScratch.bottom)
         } catch (e: Exception) {
             NodeBounds(0, 0, 0, 0)
         }

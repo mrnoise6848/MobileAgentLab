@@ -26,15 +26,22 @@ class Verifier(
     private val pollIntervalMs: Long = DEFAULT_POLL_MS,
 ) {
 
+    /**
+     * @param beforeState pre-normalized state of [before] when the caller already
+     *        has it (Phase 23: avoids normalizing the same snapshot twice per step)
+     */
     suspend fun verify(
         expectation: Expectation,
         before: UiSnapshot?,
         skipDelay: Boolean = false,
+        beforeState: CompactUiState? = null,
     ): VerificationResult {
-        val beforeState = before?.let { UiNormalizer.normalize(it) } ?: CompactUiState.empty()
+        val beforeNorm = beforeState
+            ?: before?.let { UiNormalizer.normalize(it) }
+            ?: CompactUiState.empty()
         val startedAt = System.currentTimeMillis()
         var attempts = 0
-        var lastState = beforeState
+        var lastState = beforeNorm
         var lastDetail = "no observation yet"
 
         while (true) {
@@ -48,14 +55,14 @@ class Verifier(
                     attempts = attempts,
                     elapsedMs = System.currentTimeMillis() - startedAt,
                     failureReason = FailureReason.SERVICE_UNAVAILABLE,
-                    before = beforeState,
-                    after = beforeState,
+                    before = beforeNorm,
+                    after = beforeNorm,
                     diff = StateDiff.EMPTY,
                 )
             }
 
             val state = UiNormalizer.normalize(snapshot)
-            val outcome = expectation.evaluate(beforeState, state)
+            val outcome = expectation.evaluate(beforeNorm, state)
             lastState = state
             lastDetail = outcome.detail
 
@@ -67,9 +74,9 @@ class Verifier(
                     attempts = attempts,
                     elapsedMs = System.currentTimeMillis() - startedAt,
                     failureReason = null,
-                    before = beforeState,
+                    before = beforeNorm,
                     after = state,
-                    diff = StateDiff.compute(beforeState, state),
+                    diff = StateDiff.compute(beforeNorm, state),
                 )
             }
 
@@ -86,9 +93,9 @@ class Verifier(
             attempts = attempts,
             elapsedMs = System.currentTimeMillis() - startedAt,
             failureReason = FailureReason.VERIFICATION_FAILED,
-            before = beforeState,
+            before = beforeNorm,
             after = lastState,
-            diff = StateDiff.compute(beforeState, lastState),
+            diff = StateDiff.compute(beforeNorm, lastState),
         )
     }
 

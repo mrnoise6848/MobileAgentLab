@@ -287,7 +287,7 @@ class AgentOrchestrator(
 
             val proposal = when (outcome) {
                 is PlannerOutcome.Complete -> {
-                    val verification = verifier.verify(task.completion, snapshot)
+                    val verification = verifier.verify(task.completion, snapshot, beforeState = state)
                     steps.add(
                         AgentStep(
                             index = stepIndex,
@@ -419,7 +419,7 @@ class AgentOrchestrator(
             }
 
             // 6. verify — the API returning true is NOT enough
-            val verification = verifier.verify(proposal.expectation, snapshot)
+            val verification = verifier.verify(proposal.expectation, snapshot, beforeState = state)
             val stepStatus = if (verification.passed) StepStatus.SUCCESS else StepStatus.NOT_VERIFIED
             steps.add(
                 AgentStep(
