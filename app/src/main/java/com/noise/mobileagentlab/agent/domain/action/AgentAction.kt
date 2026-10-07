@@ -1,6 +1,7 @@
 package com.noise.mobileagentlab.agent.domain.action
 
 import com.noise.mobileagentlab.agent.domain.model.NodeBounds
+import com.noise.mobileagentlab.agent.domain.trace.TraceRedactor
 
 /**
  * Phase 5 — strictly typed agent actions.
@@ -50,7 +51,7 @@ sealed interface AgentAction {
     ) : AgentAction {
         override val type: ActionType get() = ActionType.TYPE_TEXT
         override val traceLabel: String get() =
-            "TYPE \"${text.take(24)}\" into \"${expectedLabel ?: targetId}\""
+            "TYPE \"${TraceRedactor.mask(text.take(24))}\" into \"${expectedLabel ?: targetId}\""
     }
 
     data class Scroll(
