@@ -2,6 +2,7 @@ package com.noise.mobileagentlab.agent.data.accessibility
 
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
+import com.noise.mobileagentlab.agent.domain.model.ForegroundInfo
 import com.noise.mobileagentlab.agent.domain.service.AccessibilityStatus
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -10,9 +11,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-/** The window we currently see in the foreground (tracked from window state events). */
-data class ForegroundWindow(val packageName: String, val className: String?)
 
 /**
  * Process-wide connection between the accessibility service and the agent.
@@ -34,8 +32,8 @@ object AccessibilityBridge {
     private val _status = MutableStateFlow<AccessibilityStatus>(AccessibilityStatus.Disabled)
     val status: StateFlow<AccessibilityStatus> = _status.asStateFlow()
 
-    private val _foreground = MutableStateFlow<ForegroundWindow?>(null)
-    val foreground: StateFlow<ForegroundWindow?> = _foreground.asStateFlow()
+    private val _foreground = MutableStateFlow<ForegroundInfo?>(null)
+    val foreground: StateFlow<ForegroundInfo?> = _foreground.asStateFlow()
 
     private val _uiEvents = MutableSharedFlow<Unit>(
         replay = 0,
@@ -76,7 +74,7 @@ object AccessibilityBridge {
     internal fun onForegroundWindow(packageName: String, className: String?) {
         val current = _foreground.value
         if (current?.packageName != packageName || current.className != className) {
-            _foreground.value = ForegroundWindow(packageName, className)
+            _foreground.value = ForegroundInfo(packageName, className)
         }
     }
 
