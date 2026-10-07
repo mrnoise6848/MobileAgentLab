@@ -101,10 +101,21 @@ class AgentOrchestrator(
         var failureDetail: String? = null
         var nextGoal = 0
         var retries = 0
+        var actionAttempts = 0
         var plannerFailures = 0
         var validationFailures = 0
         var stepIndex = 0
         var lastState = CompactUiState.empty(task.targetPackage)
+
+        /**
+         * Phase 13 — recovery: let the UI settle, pull a fresh snapshot and let
+         * the planner reason again from the NEW state (never replay a stale plan).
+         */
+        suspend fun refreshForRecovery() {
+            observer.awaitQuietPeriod(config.settleQuietMs, config.settleTimeoutMs)
+            delay(120)
+            currentCoroutineContext().ensureActive()
+        }
 
         _state.value = AgentRunState(
             status = RunStatus.RUNNING,
@@ -229,7 +240,8 @@ class AgentOrchestrator(
 
             // 2. execution boundary: only the allowlisted package may be operated on
             val snapshotPackage = snapshot.packageName
-            if (snapshotPackage == null || snapshotPackage !in validator.policy.allowedPackages) {
+            val boundaryViolation = validator.policy.boundaryViolation(snapshotPackage, foregroundPkg)
+            if (boundaryViolation != null) {
                 steps.add(
                     AgentStep(
                         index = stepIndex,
@@ -237,11 +249,12 @@ class AgentOrchestrator(
                         status = StepStatus.ABORTED,
                         actionLabel = "ABORT",
                         observedNodes = snapshot.nodeCount,
-                        failureReason = FailureReason.PACKAGE_NOT_ALLOWED,
-                        detail = "observed package=$snapshotPackage is outside the allowed scope",
+                        failureReason = boundaryViolation,
+                        detail = "observed package=$snapshotPackage " +
+                            "foreground=${foregroundPkg ?: "unknown"} is outside the allowed scope",
                     ),
                 )
-                failureReason = FailureReason.PACKAGE_NOT_ALLOWED
+                failureReason = boundaryViolation
                 failureDetail = "observed package=$snapshotPackage"
                 status = RunStatus.FAILED
                 publishProgress()
@@ -391,13 +404,15 @@ class AgentOrchestrator(
                     ),
                 )
                 retries++
+                actionAttempts++
                 publishProgress()
-                if (retries > config.maxRetriesPerAction) {
+                if (actionAttempts > config.maxRetriesPerAction) {
                     failureReason = execution.reason ?: FailureReason.EXECUTION_FAILED
-                    failureDetail = execution.detail
+                    failureDetail = "${execution.detail} (after $actionAttempts attempt(s))"
                     status = RunStatus.FAILED
                     break@loop
                 }
+                refreshForRecovery()
                 continue@loop
             }
 
@@ -438,11 +453,23 @@ class AgentOrchestrator(
             publishProgress()
 
             if (!verification.passed) {
+                // Phase 13 — verification failed: recover instead of assuming
+                // the action worked. Refresh the state and re-plan the same goal
+                // from scratch, bounded by maxRetriesPerAction.
+                retries++
+                actionAttempts++
+                if (actionAttempts <= config.maxRetriesPerAction && !stopRequested) {
+                    publishProgress()
+                    refreshForRecovery()
+                    continue@loop
+                }
                 failureReason = FailureReason.VERIFICATION_FAILED
-                failureDetail = verification.detail
+                failureDetail = "${verification.detail} (after $actionAttempts attempt(s))"
                 status = RunStatus.FAILED
                 break@loop
             }
+
+            actionAttempts = 0
 
             if (proposal.completesGoal) {
                 nextGoal = maxOf(nextGoal, proposal.goalIndex + 1)

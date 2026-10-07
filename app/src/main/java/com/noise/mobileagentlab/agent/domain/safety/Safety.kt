@@ -32,6 +32,25 @@ data class SafetyPolicy(
     val blockSensitive: Boolean = true,
     val enforceForeground: Boolean = true,
 ) {
+    /**
+     * Phase 14 — the application boundary, as one function used by BOTH the
+     * validator and the orchestrator (single source of truth).
+     *
+     * @return `null` when the observation is inside the boundary, otherwise the
+     *         failure reason to record.
+     */
+    fun boundaryViolation(observedPackage: String?, foregroundPackage: String?): FailureReason? {
+        if (observedPackage == null || observedPackage !in allowedPackages) {
+            return FailureReason.PACKAGE_NOT_ALLOWED
+        }
+        if (enforceForeground && foregroundPackage != null && foregroundPackage !in allowedPackages) {
+            return FailureReason.PACKAGE_NOT_ALLOWED
+        }
+        return null
+    }
+
+    fun allows(actionType: ActionType): Boolean = actionType in allowedActions
+
     companion object {
         const val DEMO_TARGET_PACKAGE = "com.noise.mobileagentlab.demo"
 
@@ -58,28 +77,21 @@ class ActionValidator(val policy: SafetyPolicy) {
         foregroundPackage: String?,
     ): ValidationOutcome {
         // 1. action type
-        if (action.type !in policy.allowedActions) {
+        if (!policy.allows(action.type)) {
             return ValidationOutcome.Rejected(
                 FailureReason.ACTION_NOT_ALLOWED,
                 "${action.type.name} is not in the allowlist",
             )
         }
 
-        // 2. application scope — snapshot package is the authority, foreground is
-        //    an extra guard when known.
-        val observedPackage = snapshot.packageName
-        if (observedPackage == null || observedPackage !in policy.allowedPackages) {
+        // 2. application scope — the snapshot package is the authority, the
+        //    foreground window is an extra guard when known (Phase 14 boundary).
+        val boundary = policy.boundaryViolation(snapshot.packageName, foregroundPackage)
+        if (boundary != null) {
             return ValidationOutcome.Rejected(
-                FailureReason.PACKAGE_NOT_ALLOWED,
-                "observed package=${observedPackage ?: "unknown"} is outside scope",
-            )
-        }
-        if (policy.enforceForeground && foregroundPackage != null &&
-            foregroundPackage !in policy.allowedPackages
-        ) {
-            return ValidationOutcome.Rejected(
-                FailureReason.PACKAGE_NOT_ALLOWED,
-                "foreground package=$foregroundPackage is outside scope",
+                boundary,
+                "observed=${snapshot.packageName ?: "unknown"} " +
+                    "foreground=${foregroundPackage ?: "unknown"} is outside scope",
             )
         }
 
