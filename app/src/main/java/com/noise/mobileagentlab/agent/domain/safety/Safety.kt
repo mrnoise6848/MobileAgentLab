@@ -8,7 +8,7 @@ import com.noise.mobileagentlab.agent.domain.model.UiSnapshot
 
 /** Result of local validation: only [Allowed] actions may reach the executor. */
 sealed interface ValidationOutcome {
-    data class Allowed(val targetId: String?) : ValidationOutcome
+    data object Allowed : ValidationOutcome
     data class Rejected(val reason: FailureReason, val detail: String) : ValidationOutcome
 }
 
@@ -96,7 +96,7 @@ class ActionValidator(val policy: SafetyPolicy) {
         }
 
         // 3. global actions need no target
-        val targetId = action.targetId ?: return ValidationOutcome.Allowed(null)
+        val targetId = action.targetId ?: return ValidationOutcome.Allowed
 
         // 4. target existence + capabilities + sensitivity
         val target: UiNode = snapshot.node(targetId)
@@ -134,13 +134,13 @@ class ActionValidator(val policy: SafetyPolicy) {
             is AgentAction.TypeText -> validateTypeText(action, target)
 
             is AgentAction.Scroll ->
-                if (target.capabilities.scrollable) ValidationOutcome.Allowed(target.id)
+                if (target.capabilities.scrollable) ValidationOutcome.Allowed
                 else ValidationOutcome.Rejected(
                     FailureReason.TARGET_NOT_ACTIONABLE,
                     "node=$targetId is not scrollable",
                 )
 
-            AgentAction.Back, AgentAction.Home -> ValidationOutcome.Allowed(null)
+            AgentAction.Back, AgentAction.Home -> ValidationOutcome.Allowed
         }
     }
 
@@ -160,7 +160,7 @@ class ActionValidator(val policy: SafetyPolicy) {
             "node=$targetId is not long-clickable",
         )
 
-        else -> ValidationOutcome.Allowed(target.id)
+        else -> ValidationOutcome.Allowed
     }
 
     private fun validateTypeText(action: AgentAction.TypeText, target: UiNode): ValidationOutcome {
@@ -188,6 +188,6 @@ class ActionValidator(val policy: SafetyPolicy) {
                 "refusing to type text that looks like a secret",
             )
         }
-        return ValidationOutcome.Allowed(target.id)
+        return ValidationOutcome.Allowed
     }
 }

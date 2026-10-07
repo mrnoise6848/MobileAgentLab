@@ -30,11 +30,6 @@ class TraceStore(
         }
     }
 
-    fun latest(): AgentRun? = synchronized(lock) { storedRuns.lastOrNull() }
-
-    fun byId(runId: String): AgentRun? =
-        synchronized(lock) { storedRuns.firstOrNull { it.runId == runId } }
-
     fun clear() {
         synchronized(lock) {
             storedRuns.clear()

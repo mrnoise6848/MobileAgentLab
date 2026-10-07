@@ -252,4 +252,5 @@ Controlled failure tasks pass when they fail with their expected reason.
 | [docs/evaluation.md](docs/evaluation.md) | suite, report, metric definitions |
 | [docs/performance.md](docs/performance.md) | traversal/storage/recomposition bounds |
 | [docs/privacy.md](docs/privacy.md) | privacy/security audit with evidence |
+| [docs/review.md](docs/review.md) | final static review (phase 27) |
 | [docs/decisions/](docs/decisions/) | 8 decision records (ADR style) |

@@ -30,6 +30,10 @@ object UiTreeExtractor {
     private const val MAX_TEXT_LENGTH = 120
     private const val ROOT_ID = "n0"
 
+    // isChecked is deprecated (API 33+) in favor of stateDescription, but it
+    // remains the canonical checked flag on minSdk 29; the state-description
+    // path is handled separately by Expectation.ElementChecked.
+    @Suppress("DEPRECATION")
     fun extract(
         root: AccessibilityNodeInfo?,
         fallbackPackageName: String?,
@@ -79,7 +83,6 @@ object UiTreeExtractor {
                 editable = hasAction(node, AccessibilityNodeInfo.ACTION_SET_TEXT),
                 scrollable = node.isScrollable ||
                     hasAction(node, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD),
-                focusable = node.isFocusable || hasAction(node, AccessibilityNodeInfo.ACTION_FOCUS),
                 checkable = node.isCheckable ||
                     className.contains("CheckBox", ignoreCase = true) ||
                     className.contains("Switch", ignoreCase = true),
@@ -137,19 +140,15 @@ object UiTreeExtractor {
             return index
         }
 
-        val rootIndex = visit(root, ROOT_ID, null, 0)
+        visit(root, ROOT_ID, null, 0)
         val nodes = rawNodes.mapIndexed { i, n -> n.copy(childIds = rawChildren[i].toList()) }
-        val snapshot = UiSnapshot(
+        return UiSnapshot(
             sequence = sequence,
-            capturedAtMs = System.currentTimeMillis(),
             packageName = pkg,
             className = fallbackClassName,
-            rootId = rootIndex?.let { rawNodes[it].id },
             nodes = nodes,
-            visitedNodes = visited,
             truncated = truncated,
         )
-        return snapshot
     }
 
     private fun clip(value: String?): String =

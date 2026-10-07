@@ -295,6 +295,12 @@ private fun StatusCard(state: AgentRunState) {
                     "Step ${state.stepIndex} / ${state.maxSteps} · planner=${state.plannerId}",
                     style = MaterialTheme.typography.bodySmall,
                 )
+                if (state.finishedAtMs > 0L) {
+                    Text(
+                        "duration ${state.finishedAtMs - state.startedAtMs} ms",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 Text(
                     "screen=\"${state.screenLabel}\" · ${state.elementCount} elements",
                     style = MaterialTheme.typography.bodySmall,

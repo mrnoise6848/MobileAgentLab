@@ -26,7 +26,6 @@ boolean never reaches this decision.
 | `ElementChecked(label, checked)` | platform `checked` flag **or** accessible state `"On"/"Off"` |
 | `TreeChanged(minChanged)` | `StateDiff.changeCount ≥ min` (used for scroll/back) |
 | `PackageIs(pkg)` | normalized `packageName` matches |
-| `Unspecified` | explicit no-check; only for policy side-effect-free actions |
 
 All are pure functions over two `CompactUiState`s — no observers, no time, no
 non-determinism, JVM-unit-testable.

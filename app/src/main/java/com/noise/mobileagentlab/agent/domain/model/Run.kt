@@ -55,7 +55,6 @@ data class AgentStep(
     val detail: String = "",
 ) {
     val verified: Boolean get() = verification?.passed == true
-    val totalMs: Long get() = planMs + executeMs + verifyMs
 }
 
 /** A finished run — the unit metrics and evaluation are computed from. */
@@ -79,7 +78,6 @@ data class AgentRun(
     val stepCount: Int get() = steps.size
     val durationMs: Long get() = (finishedAtMs - startedAtMs).coerceAtLeast(0L)
     val verifiedStepCount: Int get() = steps.count { it.verified }
-    val verificationAttempts: Int get() = steps.sumOf { it.verification?.attempts ?: 0 }
     val verificationFailures: Int get() = steps.count { it.status == StepStatus.NOT_VERIFIED }
 
     /** Evaluation view: a controlled-failure task passes when it failed as expected. */
@@ -102,7 +100,6 @@ data class AgentRunState(
     val maxSteps: Int = 0,
     val steps: List<AgentStep> = emptyList(),
     val currentAction: String? = null,
-    val lastDiff: StateDiff? = null,
     val failureReason: FailureReason? = null,
     val failureDetail: String? = null,
     val startedAtMs: Long = 0L,

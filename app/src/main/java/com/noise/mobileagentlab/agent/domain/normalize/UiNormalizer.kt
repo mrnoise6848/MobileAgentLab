@@ -33,18 +33,14 @@ data class UiElement(
 
 data class CompactUiState(
     val sequence: Long,
-    val capturedAtMs: Long,
     val packageName: String?,
     val screenLabel: String,
     val elements: List<UiElement>,
     val rawNodeCount: Int,
-    val ignoredNodeCount: Int,
     val truncated: Boolean,
     val budgetExceeded: Boolean,
 ) {
     val size: Int get() = elements.size
-
-    fun element(id: String): UiElement? = elements.firstOrNull { it.id == id }
 
     /** Exact label matches first, then containment matches; order is stable. */
     fun findElements(query: String): List<UiElement> {
@@ -55,12 +51,15 @@ data class CompactUiState(
         return elements.filter { it.label.contains(q, ignoreCase = true) }
     }
 
-    fun containsLabel(query: String): Boolean = findElements(query).isNotEmpty()
-
     /** Compact rendering used as planner context (and in traces). */
     fun render(): String = buildString {
         append("screen=\"").append(screenLabel).append("\" pkg=").append(packageName ?: "?")
-        append(" nodes=").append(rawNodeCount).append('\n')
+        append(" nodes=").append(rawNodeCount)
+        // Phase 27 — caps are part of the context: a consumer must be able to
+        // tell that the view of the screen is incomplete.
+        if (truncated) append(" [truncated]")
+        if (budgetExceeded) append(" [budget-capped]")
+        append('\n')
         for (e in elements) {
             append('#').append(e.id).append(' ')
             append(e.kind.name)
@@ -83,12 +82,10 @@ data class CompactUiState(
     companion object {
         fun empty(packageName: String? = null) = CompactUiState(
             sequence = 0L,
-            capturedAtMs = 0L,
             packageName = packageName,
             screenLabel = "",
             elements = emptyList(),
             rawNodeCount = 0,
-            ignoredNodeCount = 0,
             truncated = false,
             budgetExceeded = false,
         )
@@ -169,12 +166,10 @@ object UiNormalizer {
 
         return CompactUiState(
             sequence = snapshot.sequence,
-            capturedAtMs = snapshot.capturedAtMs,
             packageName = snapshot.packageName,
             screenLabel = deriveScreenLabel(elements, snapshot),
             elements = elements,
             rawNodeCount = snapshot.nodeCount,
-            ignoredNodeCount = (snapshot.nodeCount - elements.size).coerceAtLeast(0),
             truncated = snapshot.truncated,
             budgetExceeded = budgetExceeded,
         )

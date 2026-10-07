@@ -96,9 +96,4 @@ object AccessibilityBridge {
     } catch (e: SecurityException) {
         null
     }
-
-    /** Clears cached foreground state; used when a run starts. */
-    fun resetForegroundTracking() {
-        _foreground.value = null
-    }
 }

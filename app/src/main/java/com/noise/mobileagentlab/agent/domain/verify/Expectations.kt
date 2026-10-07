@@ -70,17 +70,9 @@ sealed interface Expectation {
     }
 
     /**
-     * Explicit "nothing to check". Only usable for actions the policy treats as
-     * side-effect free; the orchestrator still records the resulting diff.
+     * The element matching [label] must expose text containing [text].
+     * Checks the element's `value` (typed content) and falls back to its label.
      */
-    data object Unspecified : Expectation {
-        override val describe: String get() = "UNSPECIFIED"
-
-        override fun evaluate(before: CompactUiState, after: CompactUiState): ExpectationOutcome =
-            ExpectationOutcome(true, "no expectation declared")
-    }
-
-    /** The element matching [label] must expose text containing [text]. */
     data class ElementTextContains(val label: String, val text: String) : Expectation {
         override val describe: String get() = "ELEMENT_TEXT_CONTAINS \"$label\" contains \"$text\""
 

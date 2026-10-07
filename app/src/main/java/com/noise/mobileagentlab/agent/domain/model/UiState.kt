@@ -15,11 +15,6 @@ data class NodeBounds(val left: Int, val top: Int, val right: Int, val bottom: I
     val width: Int get() = (right - left).coerceAtLeast(0)
     val height: Int get() = (bottom - top).coerceAtLeast(0)
     val isEmpty: Boolean get() = width <= 0 || height <= 0
-    val centerX: Int get() = left + width / 2
-    val centerY: Int get() = top + height / 2
-    val area: Long get() = width.toLong() * height.toLong()
-
-    fun contains(x: Int, y: Int): Boolean = x in left until right && y in top until bottom
 
     fun overlaps(other: NodeBounds): Boolean =
         left < other.right && other.left < right && top < other.bottom && other.top < bottom
@@ -31,7 +26,6 @@ data class NodeCapabilities(
     val longClickable: Boolean = false,
     val editable: Boolean = false,
     val scrollable: Boolean = false,
-    val focusable: Boolean = false,
     val checkable: Boolean = false,
     val checked: Boolean = false,
     val enabled: Boolean = true,
@@ -118,12 +112,9 @@ data class ForegroundInfo(val packageName: String, val className: String?)
  */
 data class UiSnapshot(
     val sequence: Long,
-    val capturedAtMs: Long,
     val packageName: String?,
     val className: String?,
-    val rootId: String?,
     val nodes: List<UiNode>,
-    val visitedNodes: Int,
     val truncated: Boolean,
 ) {
     val nodeCount: Int get() = nodes.size
@@ -132,19 +123,12 @@ data class UiSnapshot(
 
     fun node(id: String): UiNode? = index[id]
 
-    fun childrenOf(id: String): List<UiNode> = node(id)?.childIds?.mapNotNull { index[it] } ?: emptyList()
-
-    fun root(): UiNode? = rootId?.let { index[it] }
-
     companion object {
         fun empty(sequence: Long = 0L) = UiSnapshot(
             sequence = sequence,
-            capturedAtMs = 0L,
             packageName = null,
             className = null,
-            rootId = null,
             nodes = emptyList(),
-            visitedNodes = 0,
             truncated = false,
         )
     }

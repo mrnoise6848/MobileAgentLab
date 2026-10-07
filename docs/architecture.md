@@ -97,10 +97,10 @@ data/    (Android)        → AccessibilityService, node extraction, execution,
 
 | Port (domain) | Implementation (data) |
 |---|---|
-| `UiObserver` | `AccessibilityBridge` + `AgentAccessibilityService` |
+| `UiObserver` | `AccessibilityUiObserver` (over `AccessibilityBridge` + `AgentAccessibilityService`) |
 | `ActionExecutor` | `AccessibilityActionExecutor` |
-| `TargetLauncher` | `TargetLauncher` (launch-intent, allowlisted package only) |
-| `Planner` | `GoalPlanner` (local, deterministic) / `LlmPlanner` (remote, optional) |
+| `TargetLauncher` | `AndroidTargetLauncher` (launch-intent, allowlisted package only) |
+| `AgentPlanner` | `GoalPlanner` (local, deterministic) / `RemoteLlmPlanner` (remote, optional) |
 
 ---
 
@@ -118,7 +118,7 @@ data/    (Android)        → AccessibilityService, node extraction, execution,
 | `Verifier` + `Expectation` | deterministic post-action verification: wait → re-read → compare; polls until timeout, never trusts the `true` returned by `performAction` |
 | `StateDiff` | compact before/after comparison (added / removed / changed) for verification and inspector UI |
 | `AgentOrchestrator` | the loop: observe → normalize → plan → validate → execute → verify → recover, with `maxSteps`, per-action retries, stop flag, bounded termination |
-| `TraceStore` / `RunRepository` | bounded in-memory execution traces + run results (redacted, no secrets), feeding metrics and the inspector |
+| `TraceStore` | bounded in-memory execution traces (redacted, no secrets), feeding metrics and the inspector |
 | `MetricsAggregator` | real numbers derived from real runs only (planning / execution / verification latency, retries, verification success rate) |
 | `EvaluationHarness` | fixed suite of safe demo tasks incl. controlled-failure tasks; produces a report |
 | `RunInspectorScreen` | developer-facing live run view, trace list, metrics, evaluation, diff |
@@ -149,11 +149,11 @@ data/    (Android)        → AccessibilityService, node extraction, execution,
 | Need | Solution | Why |
 |---|---|---|
 | JSON parse/encode for planner I/O | small in-repo `Json` codec | avoids a serialization plugin + dependency (rule: no unnecessary dependencies) |
-| navigation | explicit sealed `LabScreen` + `when` | 5 screens; a nav library is overkill |
+| navigation | explicit `LabTab` enum + `when` | 5 tabs; a nav library is overkill |
 | DI | `LabController` (application-scoped) | wiring is 1 graph; no runtime cost |
 | state holder | `LabController` with `StateFlow` | `lifecycle-viewmodel-compose` is not in the catalog and must not be added |
 | metrics | pure-Kotlin aggregator over stored runs | no fake/hard-coded numbers |
-| LLM access | `HttpURLConnection`, opt-in, user-provided endpoint | no SDK dependency; provider-neutral (Phase 10: replaceable planner) |
+| LLM access | `HttpURLConnection`, opt-in, user-provided endpoint | no SDK dependency; provider-neutral (replaceable `AgentPlanner`) |
 
 ---
 

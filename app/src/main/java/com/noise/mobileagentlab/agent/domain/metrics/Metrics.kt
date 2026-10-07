@@ -106,9 +106,6 @@ object MetricsAggregator {
         )
     }
 
-    fun aggregateByTask(runs: List<AgentRun>): Map<String, AggregateMetrics> =
-        runs.groupBy { it.taskId }.mapValues { (_, group) -> aggregate(group) }
-
     private fun avg(total: Long, count: Int): Long = if (count <= 0) 0L else total / count
 
     private fun rate(part: Int, whole: Int): Double = if (whole <= 0) 0.0 else part.toDouble() / whole
