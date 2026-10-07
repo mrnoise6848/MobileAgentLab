@@ -142,22 +142,21 @@ object UiNormalizer {
             }
         }
 
-        // 3. element budget — actionable controls always win over plain text
+        // 3. element budget — actionable controls always win over plain text,
+        //    but the cap is HARD: the planner context never exceeds MAX_ELEMENTS
+        //    even when actionable controls alone outnumber the budget.
         var budgetExceeded = false
         val elements: List<UiElement>
         if (candidates.size > MAX_ELEMENTS) {
             budgetExceeded = true
-            val actionableCount = candidates.count { it.actionable }
-            val informativeRoom = (MAX_ELEMENTS - actionableCount).coerceAtLeast(0)
-            var informativeTaken = 0
-            val keptIds = HashSet<String>(candidates.size)
+            val keptIds = HashSet<String>(MAX_ELEMENTS)
             for (c in candidates) {
-                if (c.actionable) {
-                    keptIds.add(c.id)
-                } else if (informativeTaken < informativeRoom) {
-                    keptIds.add(c.id)
-                    informativeTaken++
-                }
+                if (keptIds.size >= MAX_ELEMENTS) break
+                if (c.actionable) keptIds.add(c.id)
+            }
+            for (c in candidates) {
+                if (keptIds.size >= MAX_ELEMENTS) break
+                if (!c.actionable) keptIds.add(c.id)
             }
             elements = candidates.filter { keptIds.contains(it.id) }
         } else {

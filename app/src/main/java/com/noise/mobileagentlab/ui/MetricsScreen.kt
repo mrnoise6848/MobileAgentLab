@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.noise.mobileagentlab.agent.LabController
 import com.noise.mobileagentlab.agent.domain.metrics.AggregateMetrics
 import com.noise.mobileagentlab.agent.domain.metrics.MetricsAggregator
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
@@ -151,5 +152,7 @@ private fun MetricRow(label: String, value: String) {
 
 private fun percent(value: Double): String = "${(value * 100).roundToInt()}%"
 
-private fun Double.format(digits: Int): String =
-    ((this * 10).toInt() / 10.0).toString().take(digits + 2)
+private fun Double.format(digits: Int): String {
+    val factor = 10.0.pow(digits)
+    return ((this * factor).roundToInt() / factor).toString()
+}

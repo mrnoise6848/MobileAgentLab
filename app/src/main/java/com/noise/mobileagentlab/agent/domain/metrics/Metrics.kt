@@ -22,6 +22,7 @@ data class RunMetrics(
     val executeMsAvg: Long,
     val verifyMsAvg: Long,
     val verificationAttempts: Int,
+    /** Verification steps that did NOT pass (same unit as [verificationAttempts]). */
     val verificationFailures: Int,
     val verificationSuccessRate: Double,
     val rejectedSteps: Int,
@@ -76,7 +77,10 @@ object MetricsAggregator {
             planMsAvg = avg(planTotal, steps.size),
             executeMsAvg = avg(executeTotal, actionCount),
             verifyMsAvg = avg(verifyTotal, withVerification.size),
-            verificationAttempts = withVerification.sumOf { it.verification?.attempts ?: 0 },
+            // Units: "attempts" = verification steps that ran (NOT poll retries),
+            // failures = steps whose verification did not pass. Both counts are
+            // steps, so the UI's "passed/attempts" and the rate always agree.
+            verificationAttempts = withVerification.size,
             verificationFailures = withVerification.size - verified,
             verificationSuccessRate = rate(verified, withVerification.size),
             rejectedSteps = steps.count { it.status == StepStatus.REJECTED },

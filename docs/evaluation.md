@@ -70,5 +70,5 @@ suiteSize` and the Eval screen marks the report as still running.
 | plan latency | `sum(step.planMs) / steps` |
 | action latency | `sum(step.executeMs) / steps with executeMs > 0` |
 | verification latency | `sum(step.verifyMs) / steps with verification` |
-| verification success | passed verifications / verification attempts |
+| verification success | verification steps that passed / verification steps run (poll retries excluded) |
 | run duration | `finishedAtMs − startedAtMs` |

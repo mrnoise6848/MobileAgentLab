@@ -16,7 +16,10 @@ object SensitiveFieldDetector {
         "password", "passwd", "passcode",
         "otp", "one time code", "one-time code", "verification code", "verify code",
         "sms code", "auth code", "2fa", "two factor", "two-factor",
-        "pin", "security code", "cvv", "cvc", "card number", "cardnumber",
+        // "pin" is intentionally NOT a substring term: "shopping"/"shipping"
+        // contain it. PIN is matched as its own token below (PIN_LIKE), which
+        // also catches view ids like "pin_field".
+        "security code", "cvv", "cvc", "card number", "cardnumber",
         "credit card", "debit card", "payment", "billing", "iban", "swift",
         "expiry", "exp date", "cvc2",
         "secret", "recovery code", "backup code", "private key",
@@ -31,7 +34,8 @@ object SensitiveFieldDetector {
         "change password", "reset password", "delete account",
     )
 
-    private val PIN_LIKE = Regex("\\bpin\\b", RegexOption.IGNORE_CASE)
+    /** "pin" bounded by non-letters: matches "enter pin", "pin_field", "PIN:"… */
+    private val PIN_LIKE = Regex("(?<![a-zA-Z])pin(?![a-zA-Z])", RegexOption.IGNORE_CASE)
 
     /**
      * @param label combined text + content description + state description
