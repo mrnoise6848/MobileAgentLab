@@ -24,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "MobileAgentLab"
 include(":app")
+// Deterministic, safe demo target ("Brew Lab") used as the only allowlisted app.
+include(":demoapp")
