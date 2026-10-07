@@ -109,6 +109,13 @@ data class AgentRunState(
     val finishedAtMs: Long = 0L,
     val screenLabel: String = "",
     val elementCount: Int = 0,
+    /** Phase 19 — controlled failure task: the failure is the expected result. */
+    val isFaultTest: Boolean = false,
+    val expectedFailures: Set<FailureReason> = emptySet(),
 ) {
     val isRunning: Boolean get() = status == RunStatus.RUNNING
+
+    /** For fault tests: the run failed with one of the expected reasons. */
+    val failedAsExpected: Boolean
+        get() = isFaultTest && failureReason != null && failureReason in expectedFailures
 }

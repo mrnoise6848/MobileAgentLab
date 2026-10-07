@@ -5,6 +5,8 @@ import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,6 +73,7 @@ fun RunInspectorScreen(controller: LabController, modifier: Modifier = Modifier)
         item {
             ConfigCard(
                 tasks = controller.availableTasks,
+                faultTasks = controller.faultTasks,
                 selectedTaskId = selectedTaskId,
                 onTaskSelected = controller::selectTask,
                 planners = controller.plannerOptions,
@@ -178,9 +181,12 @@ private fun ServiceCard(status: AccessibilityStatus, onOpenSettings: () -> Unit)
     }
 }
 
+// Phase 19 — failure cases are demonstrated, not hidden.
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ConfigCard(
     tasks: List<com.noise.mobileagentlab.agent.domain.model.PlannedTask>,
+    faultTasks: List<com.noise.mobileagentlab.agent.domain.model.PlannedTask>,
     selectedTaskId: String,
     onTaskSelected: (String) -> Unit,
     planners: List<Pair<String, String>>,
@@ -190,8 +196,8 @@ private fun ConfigCard(
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Task", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                tasks.take(4).forEach { task ->
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                tasks.forEach { task ->
                     FilterChip(
                         selected = task.id == selectedTaskId,
                         onClick = { onTaskSelected(task.id) },
@@ -199,13 +205,36 @@ private fun ConfigCard(
                     )
                 }
             }
-            val selectedTask = tasks.firstOrNull { it.id == selectedTaskId }
+            val selectedTask = (tasks + faultTasks).firstOrNull { it.id == selectedTaskId }
             selectedTask?.let {
                 Text(it.description, style = MaterialTheme.typography.bodySmall)
+                if (it.isFaultTest) {
+                    Text(
+                        "Controlled failure — expected: " +
+                            it.expectedFailures.joinToString(", ") { r -> r.name },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+            HorizontalDivider()
+            // Phase 19 — failure cases are demonstrated, not hidden.
+            Text(
+                "Controlled failure cases (expected to fail safely)",
+                style = MaterialTheme.typography.titleSmall,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                faultTasks.forEach { task ->
+                    FilterChip(
+                        selected = task.id == selectedTaskId,
+                        onClick = { onTaskSelected(task.id) },
+                        label = { Text(task.title) },
+                    )
+                }
             }
             HorizontalDivider()
             Text("Planner", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 planners.forEach { (id, label) ->
                     FilterChip(
                         selected = id == selectedPlannerId,
@@ -215,9 +244,8 @@ private fun ConfigCard(
                 }
             }
             Text(
-                "Demo tasks: ${DemoTasks.runnable.size} safe tasks · evaluation suite also " +
-                    "contains ${DemoTasks.evaluation.size - DemoTasks.runnable.size} controlled " +
-                    "failure tasks",
+                "Demo tasks: ${DemoTasks.runnable.size} safe tasks · " +
+                    "${faultTasks.size} controlled failure tasks",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -226,12 +254,14 @@ private fun ConfigCard(
 
 @Composable
 private fun StatusCard(state: AgentRunState) {
-    val container = when (state.status) {
-        RunStatus.SUCCEEDED -> MaterialTheme.colorScheme.primaryContainer
-        RunStatus.FAILED -> MaterialTheme.colorScheme.errorContainer
-        RunStatus.STOPPED -> MaterialTheme.colorScheme.surfaceVariant
-        RunStatus.RUNNING -> MaterialTheme.colorScheme.tertiaryContainer
-        RunStatus.IDLE -> MaterialTheme.colorScheme.surfaceVariant
+    val succeededAsExpected = state.failedAsExpected
+    val container = when {
+        state.status == RunStatus.SUCCEEDED -> MaterialTheme.colorScheme.primaryContainer
+        succeededAsExpected -> MaterialTheme.colorScheme.primaryContainer
+        state.status == RunStatus.FAILED -> MaterialTheme.colorScheme.errorContainer
+        state.status == RunStatus.STOPPED -> MaterialTheme.colorScheme.surfaceVariant
+        state.status == RunStatus.RUNNING -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = container)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -240,7 +270,25 @@ private fun StatusCard(state: AgentRunState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(state.taskTitle.ifBlank { "No task" }, style = MaterialTheme.typography.titleSmall)
-                Text(state.status.name, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    when {
+                        succeededAsExpected -> "FAILED AS EXPECTED"
+                        else -> state.status.name
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+            if (state.isFaultTest && !state.isRunning && state.status != RunStatus.IDLE) {
+                Text(
+                    if (succeededAsExpected) {
+                        "✓ controlled failure worked: ${state.failureReason?.name}"
+                    } else {
+                        "expected one of: ${state.expectedFailures.joinToString(", ")}"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (succeededAsExpected) MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onErrorContainer,
+                )
             }
             if (state.status != RunStatus.IDLE) {
                 Text(

@@ -126,6 +126,8 @@ class AgentOrchestrator(
             stepIndex = 0,
             maxSteps = task.maxSteps,
             startedAtMs = startedAt,
+            isFaultTest = task.isFaultTest,
+            expectedFailures = task.expectedFailures,
         )
 
         fun publishProgress() {

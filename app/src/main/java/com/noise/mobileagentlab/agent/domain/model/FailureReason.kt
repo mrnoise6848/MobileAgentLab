@@ -19,11 +19,9 @@ enum class FailureReason(val message: String) {
     INVALID_ACTION("Action failed validation"),
     EXECUTION_FAILED("Platform action did not execute"),
     VERIFICATION_FAILED("Post-action verification did not pass"),
-    RETRY_LIMIT_EXCEEDED("Recovery retries exhausted"),
     STEP_LIMIT_EXCEEDED("Agent exceeded the maximum number of steps"),
     PLANNER_ERROR("Planner could not produce a valid action"),
     PARSE_ERROR("Planner output was not a valid structured action"),
     UI_CHANGED_DURING_ACTION("UI changed while the action was executing"),
     USER_STOPPED("Run stopped by the user"),
-    UNSUPPORTED_TASK("Task is not supported by the selected planner"),
 }

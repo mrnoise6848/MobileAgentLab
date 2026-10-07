@@ -84,13 +84,19 @@ class LabController(context: Context) {
 
     val availableTasks: List<PlannedTask> get() = DemoTasks.runnable
 
+    /** Phase 19 — controlled failure tasks, selectable for demonstration. */
+    val faultTasks: List<PlannedTask> get() = DemoTasks.evaluation.filter { it.isFaultTest }
+
+    /** All selectable tasks: safe demos first, then controlled failure cases. */
+    val selectableTasks: List<PlannedTask> get() = availableTasks + faultTasks
+
     val plannerOptions: List<Pair<String, String>> = listOf(
         GoalPlanner.ID to localPlanner.displayName,
         RemoteLlmPlanner.ID to "Remote LLM planner (opt-in)",
     )
 
     fun selectTask(taskId: String) {
-        if (DemoTasks.runnable.any { it.id == taskId }) _selectedTaskId.value = taskId
+        if (selectableTasks.any { it.id == taskId }) _selectedTaskId.value = taskId
     }
 
     fun selectPlanner(plannerId: String) {
