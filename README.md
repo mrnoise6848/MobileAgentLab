@@ -128,5 +128,12 @@ again by the validator. Nothing executes after Stop. All loops are bounded
 | Doc | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | modules, layers, data flow |
+| [docs/accessibility.md](docs/accessibility.md) | service, observation, extraction contract |
+| [docs/action-model.md](docs/action-model.md) | typed actions, proposal schema, validation order |
+| [docs/verification.md](docs/verification.md) | expectations, verifier loop, state diff |
 | [docs/safety.md](docs/safety.md) | allowlist, sensitive-data rules, LLM data sent |
 | [docs/failures.md](docs/failures.md) | failure catalog: reason → handling → demo |
+| [docs/evaluation.md](docs/evaluation.md) | suite, report, metric definitions |
+| [docs/performance.md](docs/performance.md) | traversal/storage/recomposition bounds |
+| [docs/privacy.md](docs/privacy.md) | phase 24 privacy/security audit |
+| [docs/decisions/](docs/decisions/) | 8 decision records (ADR style) |
