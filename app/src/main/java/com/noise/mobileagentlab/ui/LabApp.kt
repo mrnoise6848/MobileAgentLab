@@ -54,7 +54,7 @@ fun LabApp(controller: LabController) {
                 when (tab) {
                     LabTab.RUN -> RunInspectorScreen(controller)
                     LabTab.TRACES -> RunsScreen(controller)
-                    LabTab.METRICS -> Text("Metrics (phase 17)")
+                    LabTab.METRICS -> MetricsScreen(controller)
                     LabTab.EVAL -> Text("Evaluation (phase 18)")
                     LabTab.SETTINGS -> SettingsScreen(controller)
                 }
