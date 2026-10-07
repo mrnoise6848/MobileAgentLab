@@ -50,7 +50,7 @@ data class SafetyPolicy(
     }
 }
 
-class ActionValidator(private val policy: SafetyPolicy) {
+class ActionValidator(val policy: SafetyPolicy) {
 
     fun validate(
         action: AgentAction,
