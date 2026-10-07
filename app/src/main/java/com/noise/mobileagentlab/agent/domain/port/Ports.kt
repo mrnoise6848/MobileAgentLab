@@ -1,5 +1,7 @@
 package com.noise.mobileagentlab.agent.domain.port
 
+import com.noise.mobileagentlab.agent.domain.action.AgentAction
+import com.noise.mobileagentlab.agent.domain.model.ExecutionResult
 import com.noise.mobileagentlab.agent.domain.model.ForegroundInfo
 import com.noise.mobileagentlab.agent.domain.model.UiSnapshot
 import com.noise.mobileagentlab.agent.domain.service.AccessibilityStatus
@@ -25,4 +27,24 @@ interface UiObserver {
      * Returns false when [timeoutMs] elapsed with events still arriving.
      */
     suspend fun awaitQuietPeriod(quietMs: Long = 180L, timeoutMs: Long = 1_500L): Boolean
+}
+
+/**
+ * Phase 7 — executes a validated [AgentAction] against the live window.
+ *
+ * Implementations must re-resolve the target on a FRESH tree (the planning
+ * snapshot may be stale) and must report structured failures instead of
+ * throwing.
+ */
+interface ActionExecutor {
+    suspend fun execute(action: AgentAction, snapshot: UiSnapshot): ExecutionResult
+}
+
+/**
+ * Brings an allowlisted target package to the foreground before a run.
+ * Implementations must refuse packages they were not configured with.
+ */
+interface TargetLauncher {
+    val supportedPackages: Set<String>
+    suspend fun bringToFront(packageName: String): Boolean
 }
