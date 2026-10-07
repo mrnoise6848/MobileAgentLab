@@ -18,25 +18,26 @@ class TraceStore(
     private val maxRuns: Int = DEFAULT_MAX_RUNS,
 ) {
     private val lock = Any()
-    private val runs = ArrayDeque<AgentRun>()
+    private val storedRuns = ArrayDeque<AgentRun>()
     private val _runs = MutableStateFlow<List<AgentRun>>(emptyList())
     val runs: StateFlow<List<AgentRun>> = _runs.asStateFlow()
 
     fun record(run: AgentRun) {
         synchronized(lock) {
-            runs.addLast(run)
-            while (runs.size > maxRuns) runs.removeFirst()
-            _runs.value = runs.toList()
+            storedRuns.addLast(run)
+            while (storedRuns.size > maxRuns) storedRuns.removeFirst()
+            _runs.value = storedRuns.toList()
         }
     }
 
-    fun latest(): AgentRun? = synchronized(lock) { runs.lastOrNull() }
+    fun latest(): AgentRun? = synchronized(lock) { storedRuns.lastOrNull() }
 
-    fun byId(runId: String): AgentRun? = synchronized(lock) { runs.firstOrNull { it.runId == runId } }
+    fun byId(runId: String): AgentRun? =
+        synchronized(lock) { storedRuns.firstOrNull { it.runId == runId } }
 
     fun clear() {
         synchronized(lock) {
-            runs.clear()
+            storedRuns.clear()
             _runs.value = emptyList()
         }
     }

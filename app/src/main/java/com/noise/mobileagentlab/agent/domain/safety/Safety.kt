@@ -96,13 +96,13 @@ class ActionValidator(val policy: SafetyPolicy) {
         }
 
         // 3. global actions need no target
-        if (action.targetId == null) return ValidationOutcome.Allowed(null)
+        val targetId = action.targetId ?: return ValidationOutcome.Allowed(null)
 
         // 4. target existence + capabilities + sensitivity
-        val target: UiNode = snapshot.node(action.targetId)
+        val target: UiNode = snapshot.node(targetId)
             ?: return ValidationOutcome.Rejected(
                 FailureReason.TARGET_NOT_FOUND,
-                "node=${action.targetId} missing from snapshot #${snapshot.sequence}",
+                "node=$targetId missing from snapshot #${snapshot.sequence}",
             )
 
         if (target.packageName !in policy.allowedPackages) {
@@ -114,22 +114,22 @@ class ActionValidator(val policy: SafetyPolicy) {
         if (!target.capabilities.enabled) {
             return ValidationOutcome.Rejected(
                 FailureReason.TARGET_DISABLED,
-                "node=${action.targetId} is disabled",
+                "node=$targetId is disabled",
             )
         }
         if (policy.blockSensitive && target.sensitive) {
             return ValidationOutcome.Rejected(
                 FailureReason.SENSITIVE_TARGET_BLOCKED,
-                "node=${action.targetId} looks like a sensitive field",
+                "node=$targetId looks like a sensitive field",
             )
         }
 
         return when (action) {
             is AgentAction.Click ->
-                requireCapability(target, action.targetId, needClick = true)
+                requireCapability(target, targetId, needClick = true)
 
             is AgentAction.LongClick ->
-                requireCapability(target, action.targetId, needLongClick = true)
+                requireCapability(target, targetId, needLongClick = true)
 
             is AgentAction.TypeText -> validateTypeText(action, target)
 
@@ -137,7 +137,7 @@ class ActionValidator(val policy: SafetyPolicy) {
                 if (target.capabilities.scrollable) ValidationOutcome.Allowed(target.id)
                 else ValidationOutcome.Rejected(
                     FailureReason.TARGET_NOT_ACTIONABLE,
-                    "node=${action.targetId} is not scrollable",
+                    "node=$targetId is not scrollable",
                 )
 
             AgentAction.Back, AgentAction.Home -> ValidationOutcome.Allowed(null)

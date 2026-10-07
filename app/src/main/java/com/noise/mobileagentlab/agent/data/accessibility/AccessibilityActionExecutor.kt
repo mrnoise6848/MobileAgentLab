@@ -3,7 +3,7 @@ package com.noise.mobileagentlab.agent.data.accessibility
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.accessibility.AccessibilityService
+import android.accessibilityservice.AccessibilityService
 import com.noise.mobileagentlab.agent.domain.action.AgentAction
 import com.noise.mobileagentlab.agent.domain.action.ScrollDirection
 import com.noise.mobileagentlab.agent.domain.model.ExecutionResult

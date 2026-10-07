@@ -48,7 +48,7 @@ fun SettingsScreen(controller: LabController, modifier: Modifier = Modifier) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Accessibility service", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "Status: ${status.name}" +
+                    "Status: ${status::class.simpleName}" +
                         if (status == AccessibilityStatus.Connected) "" else
                         " — enable \"MobileAgent Lab Observer\" in system settings",
                     style = MaterialTheme.typography.bodyMedium,

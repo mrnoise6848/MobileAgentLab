@@ -325,7 +325,7 @@ private fun StepCard(step: AgentStep, expanded: Boolean, onToggle: () -> Unit) {
                                     "(${it.attempts} attempt(s), ${it.elapsedMs}ms) ${it.detail}\n",
                             )
                         }
-                        if (diff != null && !diff.isEmpty()) {
+                        if (diff != null && !diff.isEmpty) {
                             append("state diff:\n")
                             append(diff.render())
                         }

@@ -49,7 +49,7 @@ data class CompactUiState(
     /** Exact label matches first, then containment matches; order is stable. */
     fun findElements(query: String): List<UiElement> {
         if (query.isBlank()) return emptyList()
-        val q = normalizeLabel(query)
+        val q = UiNormalizer.normalizeLabel(query)
         val exact = elements.filter { it.label.equals(q, ignoreCase = true) }
         if (exact.isNotEmpty()) return exact
         return elements.filter { it.label.contains(q, ignoreCase = true) }

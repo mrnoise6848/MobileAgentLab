@@ -6,6 +6,8 @@ import com.noise.mobileagentlab.agent.data.accessibility.AccessibilityUiObserver
 import com.noise.mobileagentlab.agent.data.accessibility.AndroidTargetLauncher
 import com.noise.mobileagentlab.agent.data.planner.LlmConfig
 import com.noise.mobileagentlab.agent.data.planner.RemoteLlmPlanner
+import com.noise.mobileagentlab.agent.domain.evaluation.EvaluationHarness
+import com.noise.mobileagentlab.agent.domain.evaluation.EvaluationState
 import com.noise.mobileagentlab.agent.domain.model.AgentRunState
 import com.noise.mobileagentlab.agent.domain.model.PlannedTask
 import com.noise.mobileagentlab.agent.domain.orchestrator.AgentOrchestrator
@@ -67,10 +69,18 @@ class LabController(context: Context) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    /** Phase 18 — evaluation suite progress; null report until first run. */
+    private val _evaluation = MutableStateFlow<EvaluationState>(EvaluationState.Idle)
+    val evaluation: StateFlow<EvaluationState> = _evaluation.asStateFlow()
+
     val runState: StateFlow<AgentRunState> = orchestrator.state
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var runJob: Job? = null
+    private var evalJob: Job? = null
+
+    @Volatile
+    private var evalStopRequested = false
 
     val availableTasks: List<PlannedTask> get() = DemoTasks.runnable
 
@@ -107,7 +117,7 @@ class LabController(context: Context) {
             _error.value = "unknown task: $taskId"
             return false
         }
-        if (orchestrator.isActive) {
+        if (orchestrator.isActive || evalJob?.isActive == true) {
             _error.value = "a run is already active"
             return false
         }
@@ -127,6 +137,55 @@ class LabController(context: Context) {
 
     /** Cooperative stop: the orchestrator will not execute anything afterwards. */
     fun stopRun() {
+        orchestrator.requestStop()
+    }
+
+    // --- evaluation (phase 18) -------------------------------------------------
+
+    /**
+     * Runs the fixed suite [DemoTasks.evaluation] sequentially, recording every
+     * run. Progress is pushed through [evaluation]; the final report is built
+     * exclusively from the recorded runs.
+     */
+    fun startEvaluation(): Boolean {
+        if (orchestrator.isActive || evalJob?.isActive == true) {
+            _error.value = "a run is already active"
+            return false
+        }
+        _error.value = null
+        evalStopRequested = false
+        val suite = DemoTasks.evaluation
+        _evaluation.value = EvaluationState.Running(0, suite.size, suite.first().title, null)
+        evalJob = scope.launch {
+            try {
+                suite.forEachIndexed { index, task ->
+                    if (evalStopRequested) return@forEachIndexed
+                    _evaluation.value = EvaluationState.Running(
+                        completed = index,
+                        total = suite.size,
+                        currentTaskTitle = task.title,
+                        report = EvaluationHarness.buildReport(traceStore.runs.value),
+                    )
+                    try {
+                        val run = orchestrator.run(task, currentPlanner())
+                        traceStore.record(run)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        _error.value = "evaluation task ${task.id} aborted: ${e.javaClass.simpleName}"
+                    }
+                }
+            } finally {
+                val report = EvaluationHarness.buildReport(traceStore.runs.value)
+                _evaluation.value = EvaluationState.Finished(report)
+            }
+        }
+        return true
+    }
+
+    /** Stops the whole evaluation suite: current run + remaining tasks. */
+    fun stopEvaluation() {
+        evalStopRequested = true
         orchestrator.requestStop()
     }
 
