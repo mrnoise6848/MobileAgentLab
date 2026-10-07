@@ -350,41 +350,38 @@ private fun StepCard(step: AgentStep, expanded: Boolean, onToggle: () -> Unit) {
             }
             Text(
                 "goal ${step.goalIndex + 1} · plan ${step.planMs}ms · exec ${step.executeMs}ms · " +
-                    "verify ${step.verifyMs}ms · ${step.observedNodes} nodes",
+                    "verify ${step.verifyMs}ms · ${step.observedNodes} nodes" +
+                    (step.diff?.takeIf { !it.isEmpty }?.let { " · " + it.compactSummary() } ?: ""),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (expanded) {
                 val diff = step.diff
                 val failure = step.failureReason
-                Text(
-                    buildString {
-                        if (step.planReason.isNotBlank()) append("reason: ${step.planReason}\n")
-                        step.expectation?.let { append("expected: ${it.describe}\n") }
-                        if (step.validationDetail.isNotBlank()) {
-                            append("validation: ${step.validationDetail}\n")
-                        }
-                        if (step.executionDetail.isNotBlank()) {
-                            append("execution: ${step.executionDetail}\n")
-                        }
-                        step.verification?.let {
-                            append(
-                                "verification: ${if (it.passed) "PASS" else "FAIL"} " +
-                                    "(${it.attempts} attempt(s), ${it.elapsedMs}ms) ${it.detail}\n",
-                            )
-                        }
-                        if (diff != null && !diff.isEmpty) {
-                            append("state diff:\n")
-                            append(diff.render())
-                        }
-                        if (failure != null) {
-                            append("failure: ${failure.name} ${step.detail}")
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
+                val details = buildString {
+                    if (step.planReason.isNotBlank()) append("reason: ${step.planReason}\n")
+                    if (step.validationDetail.isNotBlank()) {
+                        append("validation: ${step.validationDetail}\n")
+                    }
+                    if (step.executionDetail.isNotBlank()) {
+                        append("execution: ${step.executionDetail}\n")
+                    }
+                    if (failure != null) {
+                        append("failure: ${failure.name} — ${step.detail}")
+                    }
+                }
+                if (details.isNotBlank()) {
+                    Text(
+                        details,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+                if (step.verification != null || diff != null) {
+                    HorizontalDivider(Modifier.padding(top = 6.dp))
+                    StepDiffView(step, Modifier.padding(top = 6.dp))
+                }
             }
         }
     }
